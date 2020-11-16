@@ -34,6 +34,7 @@ public class ConnectionThread extends Thread {
     public ConnectionThread(Socket socket, SocketClient socketClient){
         this.socket = socket;
         this.socketClient = socketClient;
+        connection = new Connection(socket);
         isRunning = true;
         isServer = false;
     }
@@ -49,9 +50,13 @@ public class ConnectionThread extends Thread {
             
             BufferedReader reader;
             try {
-                reader = new BufferedReader(new InputStreamReader(
-                                            socket.getInputStream()));
-                String rawMessage = reader.readLine();
+                String rawMessage = "";
+                if(!socket.isClosed()){
+                    reader = new BufferedReader(new InputStreamReader(
+                            socket.getInputStream()));
+                    rawMessage = reader.readLine();
+                }
+
                 if(isServer){
                     String messageFlag = rawMessage.substring(0, 1);
                     String message = rawMessage.substring(1);
@@ -62,7 +67,9 @@ public class ConnectionThread extends Thread {
                             socketServer.getMessageHandler().onReceive(connection, message);
                             break;
                         case MessageFlag.connectionClosed:
-                            stopRunning();
+                            stopRunning(String.format("[%s:%s]下线了",socket.getLocalAddress(),socket.getPort()));
+                            HostCounter.count--;
+                            System.out.println(String.format("[统计]共有%d个客户端在线",HostCounter.count));
                             break;
                         default:
                             break;
@@ -92,9 +99,10 @@ public class ConnectionThread extends Thread {
         return isRunning;
     }
     
-    public void stopRunning() {
+    public void stopRunning(String msg) {
         isRunning = false;
         try {
+            System.out.println(msg);
             socket.close();
         } catch (IOException e) {
             // TODO Auto-generated catch block

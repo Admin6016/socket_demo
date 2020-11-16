@@ -48,6 +48,10 @@ public class ListeningThread extends Thread {
             try {
                 Socket socket;
                 socket = serverSocket.accept();
+
+                System.out.println(String.format("客户端[%s:%s]上线了",socket.getLocalAddress(),socket.getPort()));
+                HostCounter.count++;
+                System.out.println(String.format("[统计]共有%d个客户端在线",HostCounter.count));
                 ConnectionThread connectionThread = new ConnectionThread(socket, socketServer);
                 connectionThreads.addElement(connectionThread);
                 connectionThread.start();
@@ -66,7 +70,7 @@ public class ListeningThread extends Thread {
 
     public void stopRunning() {
         for (int i = 0; i < connectionThreads.size(); i++)
-            connectionThreads.elementAt(i).stopRunning();
+            connectionThreads.elementAt(i).stopRunning("- -");
         isRunning = false;
     }
 } 
